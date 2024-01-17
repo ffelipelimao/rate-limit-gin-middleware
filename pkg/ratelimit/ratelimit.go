@@ -22,6 +22,7 @@ func NewRateLimit(req int, interval time.Duration) *RateLimit {
 
 func (r *RateLimit) Apply() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		//Map ip-timestamp: numero de requeets
 
 	}
 }
