@@ -12,7 +12,7 @@ func main() {
 
 	app := gin.Default()
 
-	rateLimit := ratelimit.NewRateLimit(5, 5*time.Second)
+	rateLimit := ratelimit.NewRateLimit(100, 5*time.Second)
 
 	app.Use(rateLimit.Apply())
 

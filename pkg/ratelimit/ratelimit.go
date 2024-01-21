@@ -2,6 +2,7 @@ package ratelimit
 
 import (
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,7 @@ type RateLimit struct {
 	Requests int
 	Interval time.Duration
 	Storage  map[string]storage
+	mapMutex sync.RWMutex
 }
 
 type storage struct {
@@ -23,6 +25,7 @@ func NewRateLimit(req int, interval time.Duration) *RateLimit {
 		Requests: req,
 		Interval: interval,
 		Storage:  make(map[string]storage),
+		mapMutex: sync.RWMutex{},
 	}
 
 	go rl.purge()
@@ -33,6 +36,9 @@ func NewRateLimit(req int, interval time.Duration) *RateLimit {
 func (r *RateLimit) Apply() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		IP := c.ClientIP()
+
+		r.mapMutex.Lock()
+		defer r.mapMutex.Unlock()
 
 		userRequests, ok := r.Storage[IP]
 		if !ok {
@@ -57,6 +63,8 @@ func (r *RateLimit) Apply() gin.HandlerFunc {
 func (r *RateLimit) purge() {
 	for {
 		time.Sleep(r.Interval)
+
+		r.mapMutex.Lock()
 		currentTime := time.Now()
 
 		for key, s := range r.Storage {
@@ -64,5 +72,6 @@ func (r *RateLimit) purge() {
 				delete(r.Storage, key)
 			}
 		}
+		r.mapMutex.Unlock()
 	}
 }
